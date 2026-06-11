@@ -5,7 +5,7 @@ You write simple workout blocks; the plugin turns them into rendered tables, per
 records, 1RM estimates, weekly volume, and exercise-name autocomplete. Your training log
 stays in markdown files you own — no app, no account, no export lock-in.
 
-## Usage
+## How it works
 
 Create one note per workout in your workouts folder (default: `Workouts/`), named by date:
 
@@ -47,7 +47,7 @@ That's the whole syntax:
 Weights accept `kg` or `lb` (e.g. `@ 225lb`); without a suffix, the default unit from
 settings is used. Internally everything is converted to kg, so you can mix units freely.
 
-## Features
+## What you get
 
 - **Rendered tables** — in reading view, each workout block becomes a clean table per
   exercise, with a `last: 102.5kg × 5 (2026-06-04)` label showing your previous session
@@ -83,59 +83,21 @@ Manual install (not yet in the community plugin directory):
    `<your vault>/.obsidian/plugins/gym-tracker/`.
 2. Reload Obsidian and enable **Gym Tracker** under *Settings → Community plugins*.
 
-## Development
+To build from source: `npm install && npm run build`.
 
-```bash
-npm install        # install dependencies
-npm run dev        # esbuild watch mode → main.js
-npm run build      # type-check (tsc -noEmit) + production bundle
-npm test           # run the test suite (vitest)
-npm run lint       # eslint, including the obsidianmd plugin rules
-```
+## TODOS/IDEAS
 
-For a live development loop, point the build output into a test vault
-(symlink or copy `main.js`, `manifest.json`, `styles.css` into
-`<vault>/.obsidian/plugins/gym-tracker/`) and reload Obsidian after changes.
+Parser / DSL work
+- RPE notation — support 3x5 @ 100kg RPE 8 so sets can record perceived effort.
+- AMRAP sets — 3x5+ @ 100kg where the last set is "as many reps as possible", logged after the fact as 5,5,8.
+- Supersets — group exercises with A1/A2 prefixes or indentation rules.
 
-### Architecture
+Stats / algorithms
+- Progression trend — simple linear regression over a lift's estimated 1RM history, showing e.g. "+2.5kg/month" in the stats view.
+- Training streaks and frequency — current streak, sessions per week over time.
+- Multiple 1RM formulas — current Epley; add Brzycki and a settings dropdown?
 
-The design is a **pure core with a thin Obsidian shell**: all domain logic
-(parsing, stats, indexing) is plain TypeScript with no Obsidian imports and is
-unit-tested; only the outer layers touch the Obsidian API.
+UI / Obsidian API
+- Hand-rolled SVG chart in the stats sidebar — 1RM over time per exercise, no charting library
+- Calendar heatmap of training days (GitHub-contributions style).
 
-```
-markdown notes  →  parser  →  ExerciseIndex  →  autocomplete / tables / stats
- (source of        (pure)     (in-memory,        (Obsidian shell, re-renders
-  truth)                       observable)         on index changes)
-```
-
-| Path | Description |
-|---|---|
-| `src/model/` | Domain types (`Workout`, `Exercise`, `WorkoutSet`, `Weight`), kg⇄lb conversion |
-| `src/parser/` | Workout DSL → typed data; errors are collected, never thrown. Also the DSL serializer |
-| `src/index/` | `ExerciseIndex` — in-memory source of truth, updated incrementally from vault events |
-| `src/stats/` | Pure functions: PRs, weekly volume, per-exercise history, Epley 1RM |
-| `src/util/` | Filename date parsing, ISO-week keys, Levenshtein distance |
-| `src/autocomplete/` | `EditorSuggest` for exercise names — only triggers inside workout fences |
-| `src/render/` | Code-block processor → HTML tables, last-session labels, typo warnings |
-| `src/views/` | Right-sidebar stats view; subscribes to index changes |
-| `src/settings/` | Settings schema, defensive normalization, settings tab |
-| `src/main.ts` | Plugin entry point — wires everything, debounces vault events |
-| `tests/` | Vitest unit tests for all pure modules |
-
-Key invariants:
-
-- **Weights are stored as written and converted to kg only for computation/display.**
-- **`ExerciseIndex` is the single source of truth**; vault events update it and a
-  subscribe/notify pattern re-renders the stats view.
-- **Parsing never throws** — malformed lines become `ParseError`s rendered to the user.
-- **Vault content is untrusted** — rendering uses Obsidian's escaping DOM helpers
-  (`createEl`/`setText`), never `innerHTML`.
-
-### TODOS/IDEAS
-
-- New parsing/stats/index logic goes in pure modules with matching `tests/*.test.ts`.
-- Strict TypeScript: no `any`, handle `undefined` explicitly.
-- DSL changes must update the parser (`SET_RE`), the block renderer, the autocomplete
-  insertion helpers, and their tests together — and the syntax table in this README.
-- Run `npm test`, `npm run build`, and `npm run lint` before submitting changes.
