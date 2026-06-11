@@ -1,0 +1,10 @@
+{
+  "id": "gym-tracker",
+  "name": "Gym Tracker",
+  "version": "0.1.0",
+  "minAppVersion": "1.7.2",
+  "description": "Track workouts in fenced workout code blocks. Personal records, 1RM estimates, weekly volume, and exercise-name autocomplete.",
+  "author": "ts4f",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}

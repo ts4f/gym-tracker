@@ -1,0 +1,164 @@
+/* Gym Tracker plugin styles */
+
+.gym-tracker-block {
+  margin: 0.5em 0;
+}
+
+.gym-tracker-block h4 {
+  margin: 0.75em 0 0.25em 0;
+  font-weight: 600;
+}
+
+.gym-tracker-block table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 0.5em;
+}
+
+.gym-tracker-block th,
+.gym-tracker-block td {
+  padding: 0.25em 0.75em;
+  border-bottom: 1px solid var(--background-modifier-border);
+  text-align: center;
+}
+
+.gym-tracker-block th {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.gym-tracker-block .gym-tracker-bw {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.gym-tracker-last-session {
+  color: var(--text-muted);
+  margin-left: 0.5em;
+  font-size: 0.85em;
+  font-weight: 400;
+}
+
+.gym-tracker-fuzzy-warning {
+  color: var(--text-warning);
+  margin-left: 0.5em;
+  font-size: 0.9em;
+}
+
+.gym-tracker-fuzzy-warning::before {
+  content: "\26A0 ";
+}
+
+.gym-tracker-errors {
+  color: var(--text-error);
+  font-size: 0.85em;
+  margin-top: 0.25em;
+  padding-left: 0.75em;
+  border-left: 2px solid var(--text-error);
+}
+
+.gym-tracker-stats-view {
+  padding: 0.75em;
+}
+
+.gym-tracker-stats-view details {
+  border-bottom: 2px solid var(--background-modifier-border);
+  margin-bottom: 0.75em;
+  padding-bottom: 0.5em;
+}
+
+.gym-tracker-stats-view summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  cursor: pointer;
+  list-style: none;
+  margin: 0.5em 0;
+  font-size: 1em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.gym-tracker-stats-view summary::-webkit-details-marker {
+  display: none;
+}
+
+.gym-tracker-stats-view summary::before {
+  content: "▶";
+  font-size: 0.65em;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.gym-tracker-stats-view details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.gym-tracker-stats-view table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.25em 0 0.25em 0;
+}
+
+.gym-tracker-stats-view th,
+.gym-tracker-stats-view td {
+  padding: 0.3em 0.5em;
+  border-bottom: 1px solid var(--background-modifier-border);
+  text-align: left;
+}
+
+.gym-tracker-stats-view th {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.gym-tracker-stats-view td:last-child,
+.gym-tracker-stats-view th:last-child {
+  text-align: right;
+}
+
+.gym-tracker-pr-row {
+  cursor: pointer;
+}
+
+.gym-tracker-pr-row:hover td {
+  background-color: var(--background-modifier-hover);
+}
+
+.gym-tracker-pr-row-selected td {
+  background-color: var(--background-modifier-hover);
+  font-weight: 600;
+}
+
+.gym-tracker-history-row > td {
+  padding: 0 0 0.5em 0.75em;
+}
+
+.gym-tracker-stats-view table.gym-tracker-history {
+  margin: 0;
+}
+
+.gym-tracker-stats-view .gym-tracker-history th,
+.gym-tracker-stats-view .gym-tracker-history td {
+  font-size: 0.9em;
+  border-bottom: 1px solid var(--background-modifier-border-hover);
+}
+
+.gym-tracker-stats-view ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.gym-tracker-stats-view li {
+  padding: 0.25em 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
