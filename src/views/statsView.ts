@@ -41,10 +41,6 @@ export class GymTrackerStatsView extends ItemView {
     this.unsubscribe = null;
   }
 
-  private isTypo(name: string): boolean {
-    return this.index.nearestMatch(name, 2) !== null;
-  }
-
   private render(): void {
     const { contentEl } = this;
     contentEl.empty();
@@ -58,7 +54,7 @@ export class GymTrackerStatsView extends ItemView {
 
     this.renderSection(contentEl, "Personal Records", (el) => {
       const rows: [string, string][] = [...prs.entries()]
-        .filter(([name, pr]) => pr.maxWeight !== undefined && !this.isTypo(name))
+        .filter(([, pr]) => pr.maxWeight !== undefined)
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([name, pr]) => [
           name,
@@ -81,7 +77,6 @@ export class GymTrackerStatsView extends ItemView {
         return;
       }
       const rows: [string, string][] = [...thisWeek.entries()]
-        .filter(([name]) => !this.isTypo(name))
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([name, vol]) => {
           let value: string;
@@ -99,7 +94,7 @@ export class GymTrackerStatsView extends ItemView {
 
     this.renderSection(contentEl, "Est. 1RM Leaderboard", (el) => {
       const rows: [string, string][] = [...prs.entries()]
-        .filter(([name, pr]) => pr.maxEst1RM !== undefined && !this.isTypo(name))
+        .filter(([, pr]) => pr.maxEst1RM !== undefined)
         .sort(
           ([, a], [, b]) =>
             (b.maxEst1RM?.value ?? 0) - (a.maxEst1RM?.value ?? 0),

@@ -87,6 +87,20 @@ To build from source: `npm install && npm run build`.
 
 ## TODOS/IDEAS
 
+### Council-prioritized roadmap
+
+Ranked by leverage (effort: S/M/L). Foundation before features.
+
+1. **`last:` + target nudge in live preview / edit mode** (M) — surface the previous-session label (and a "beat this" target) while editing, not only in reading view. The highest-value retention feature; turns a passive log into a coach at the moment of logging. Pair with refreshing rendered blocks on `index.notify()` so the label never goes stale.
+2. **Harden the parser + fix the index** (M) — cap unbounded `NxM` set counts (`99999999x5` currently allocates an array that big and can freeze the render thread); replace clear-and-rebuild-on-every-edit with a debounced/incremental rebuild and cache the typo set instead of scanning quadratically; add a `parse(serialize(x))` round-trip test.
+3. **First-run onboarding command** (S) — "Create your first workout" that scaffolds a dated note with a commented example block, so a fresh vault isn't a blank page.
+4. **Non-destructive typo handling** (M) — show flagged names with a "Did you mean?" affordance plus a one-click "merge X into Y" that rewrites your files. Never silently hide a row. *(Step 1 below — removing the silent hiding — is done.)*
+5. **Per-lift progress trend** (S) — slope of top-set / est. 1RM over time, shown as e.g. "+2.5kg/month". Cheaper than a chart, same signal.
+6. **Calendar heatmap / streak consistency view** (M) — GitHub-contributions-style training calendar; consistency drives adherence and is the most shareable artifact.
+7. **RPE/RIR in the DSL** (M) — e.g. `3x5 @ 100kg @8` to record perceived effort. The dimension that separates a log from a training tool — deliberately phase two, after the foundation (#2) is solid.
+
+### Backlog
+
 Parser / DSL work
 - RPE notation — support 3x5 @ 100kg RPE 8 so sets can record perceived effort.
 - AMRAP sets — 3x5+ @ 100kg where the last set is "as many reps as possible", logged after the fact as 5,5,8.
