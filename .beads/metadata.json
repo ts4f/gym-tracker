@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "gym_tracker",
+  "project_id": "c9807bd6-92dd-44f7-b35f-be3428e912d8"
+}
