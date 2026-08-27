@@ -1,7 +1,7 @@
 import { Plugin } from "obsidian";
 import { ExerciseIndex } from "../index/exerciseIndex";
 import { WorkoutSet } from "../model/types";
-import { parseWorkoutBlock } from "../parser/parser";
+import { parseWorkoutBlock } from "../parser/core";
 import { GymTrackerSettings } from "../settings/settings";
 import { formatSessionSummary, lastSessionBefore } from "../stats/history";
 import { parseFilename } from "../util/filenameDate";

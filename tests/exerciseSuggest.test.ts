@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildAuxLine, buildInsertion } from "../src/autocomplete/insertionHelpers";
 import { LastWeight } from "../src/index/exerciseIndex";
-import { parseWorkoutBlock } from "../src/parser/parser";
+import { parseWorkoutBlock } from "../src/parser/core";
 
 const baseDate = new Date("2026-05-20T00:00:00Z");
 
@@ -43,19 +43,19 @@ describe("buildAuxLine", () => {
 });
 
 describe("buildInsertion — weighted exercise", () => {
-  it("inserts name + indented weight stub for a kg weight", () => {
+  it("inserts name + weight-first stub for a kg weight", () => {
     const result = buildInsertion("Tricep Dips", { value: 30, unit: "kg" });
-    expect(result.text).toBe("Tricep Dips\n\t@ 30kg");
+    expect(result.text).toBe("Tricep Dips\n\t30kg x ");
   });
 
-  it("inserts name + indented weight stub for a lb weight", () => {
+  it("inserts name + weight-first stub for a lb weight", () => {
     const result = buildInsertion("DB Curl", { value: 25, unit: "lb" });
-    expect(result.text).toBe("DB Curl\n\t@ 25lb");
+    expect(result.text).toBe("DB Curl\n\t25lb x ");
   });
 
-  it("positions cursor after the tab, before the weight stub", () => {
+  it("positions cursor after the weight stub", () => {
     const result = buildInsertion("Bench Press", { value: 30, unit: "kg" });
-    expect(result.cursorCh).toBe(1);
+    expect(result.cursorCh).toBe(8);
   });
 
   it("round-trips through the parser once reps are typed at the cursor", () => {
@@ -68,7 +68,7 @@ describe("buildInsertion — weighted exercise", () => {
       const { text, cursorCh } = buildInsertion("Squat", lastWeight);
       const lines = text.split("\n");
       const setLine = lines[1] ?? "";
-      const typed = setLine.slice(0, cursorCh) + "3x5 " + setLine.slice(cursorCh);
+      const typed = setLine.slice(0, cursorCh) + "5 x 3" + setLine.slice(cursorCh);
       const result = parseWorkoutBlock([lines[0], typed].join("\n"), {
         defaultUnit: "kg",
       });

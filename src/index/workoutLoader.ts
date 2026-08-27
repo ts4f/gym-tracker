@@ -1,6 +1,6 @@
 import { TFile, Vault } from "obsidian";
 import { Exercise, Unit, Workout } from "../model/types";
-import { parseWorkoutBlock } from "../parser/parser";
+import { parseWorkoutBlock } from "../parser/core";
 import { parseFilename } from "../util/filenameDate";
 import { extractWorkoutBlocks } from "./blockExtractor";
 

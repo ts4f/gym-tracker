@@ -19,11 +19,12 @@ export interface InsertionResult {
 
 export function buildInsertion(name: string, lastWeight: LastWeight): InsertionResult {
   if (lastWeight !== null && lastWeight !== "bodyweight") {
-    // No space between value and unit — SET_RE only parses "100kg", not "100 kg".
-    // Cursor goes after the tab: reps are typed in front of the "@".
+    // v2 weight-first: prefill "100kg x " and place the cursor after it so the
+    // user types reps and sets (e.g. "5 x 3").
+    const stub = `${lastWeight.value}${lastWeight.unit} x `;
     return {
-      text: `${name}\n\t@ ${lastWeight.value}${lastWeight.unit}`,
-      cursorCh: 1,
+      text: `${name}\n\t${stub}`,
+      cursorCh: stub.length + 1,
     };
   }
   return {
