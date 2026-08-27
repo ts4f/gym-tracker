@@ -1,7 +1,7 @@
 {
   "name": "gym-tracker",
-  "version": "0.1.0",
-  "description": "Obsidian plugin for tracking gym workouts with autocomplete, PRs, and 1RM estimates.",
+  "version": "0.2.0",
+  "description": "Obsidian plugin for tracking gym workouts with weight-first notation, RPE, AMRAP, extensible attributes, autocomplete, PRs, and 1RM estimates.",
   "main": "main.js",
   "type": "module",
   "scripts": {
