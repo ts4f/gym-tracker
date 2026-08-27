@@ -1,7 +1,8 @@
 import { Plugin } from "obsidian";
 import { ExerciseIndex } from "../index/exerciseIndex";
-import { WorkoutSet } from "../model/types";
+import { AttrValue, WorkoutSet } from "../model/types";
 import { parseWorkoutBlock } from "../parser/core";
+import { formatAttribute } from "../parser/registry";
 import { GymTrackerSettings } from "../settings/settings";
 import { formatSessionSummary, lastSessionBefore } from "../stats/history";
 import { parseFilename } from "../util/filenameDate";
@@ -11,6 +12,8 @@ export interface SetRow {
   reps: number;
   weight: string;
   isBodyweight: boolean;
+  rpe?: number;
+  attrs?: string;
   note: string;
 }
 
@@ -75,11 +78,25 @@ export function buildSetRows(sets: WorkoutSet[]): SetRow[] {
         reps,
         weight: formatWeight(set),
         isBodyweight: set.isBodyweight,
+        rpe: set.rpe,
+        attrs: formatAttributes(set.attributes),
         note: set.comment ?? "",
       });
     }
   }
   return rows;
+}
+
+function formatAttributes(attrs?: Map<string, AttrValue>): string | undefined {
+  if (!attrs || attrs.size === 0) return undefined;
+  const parts: string[] = [];
+  for (const [key, value] of attrs) {
+    if (value === true) parts.push(key);
+    else if (value !== false && value !== null && value !== undefined) {
+      parts.push(`${key} ${formatAttribute(key, value)}`);
+    }
+  }
+  return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
 export function registerBlockProcessor(
@@ -110,7 +127,7 @@ export function registerBlockProcessor(
 
       const table = wrapper.createEl("table");
       const headRow = table.createEl("thead").createEl("tr");
-      for (const header of ["Set", "Reps", "Weight", "Note"]) {
+      for (const header of ["Set", "Reps", "Weight", "RPE", "Note"]) {
         headRow.createEl("th", { text: header });
       }
 
@@ -123,7 +140,8 @@ export function registerBlockProcessor(
         const weightTd = tr.createEl("td");
         if (row.isBodyweight) weightTd.addClass("gym-tracker-bw");
         weightTd.setText(row.weight);
-        tr.createEl("td", { text: row.note });
+        tr.createEl("td", { text: row.rpe !== undefined ? String(row.rpe) : "—" });
+        tr.createEl("td", { text: [row.note, row.attrs].filter(Boolean).join(" · ") });
       }
     }
 

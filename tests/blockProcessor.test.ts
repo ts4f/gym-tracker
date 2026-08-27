@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildSetRows, formatWeight, fuzzyWarning, lastSessionLabel } from "../src/render/blockProcessor";
-import { WorkoutSet, Workout } from "../src/model/types";
+import { AttrValue, WorkoutSet, Workout } from "../src/model/types";
 import { ExerciseIndex } from "../src/index/exerciseIndex";
 
 function weightSet(reps: number[], value: number, unit: "kg" | "lb" = "kg", comment?: string): WorkoutSet {
@@ -85,6 +85,20 @@ describe("buildSetRows — NxM expansion", () => {
   it("empty note when no comment", () => {
     const rows = buildSetRows([weightSet([8], 80)]);
     expect(rows[0]?.note).toBe("");
+  });
+
+  it("surfaces rpe and attributes on rows", () => {
+    const set: WorkoutSet = {
+      reps: [5, 5, 5],
+      weight: { value: 100, unit: "kg" },
+      isBodyweight: false,
+      rpe: 8,
+      attributes: new Map<string, AttrValue>([["tempo", "3-1-3"], ["rest", 90]]),
+      line: 1,
+    };
+    const rows = buildSetRows([set]);
+    expect(rows[0]?.rpe).toBe(8);
+    expect(rows[0]?.attrs).toBe("tempo 3-1-3 · rest 90s");
   });
 });
 
