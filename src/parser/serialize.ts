@@ -1,4 +1,5 @@
 import { AttrValue, Exercise, Weight, WorkoutSet } from "../model/types";
+import { formatAttribute } from "./registry";
 
 function formatWeightToken(w: Weight): string {
   return `${w.value}${w.unit}`;
@@ -10,7 +11,7 @@ function attributesPart(attrs?: Map<string, AttrValue>): string {
   for (const [key, value] of attrs) {
     if (value === true) parts.push(key);
     else if (value !== false && value !== null && value !== undefined) {
-      parts.push(`${key} ${value}`);
+      parts.push(`${key} ${formatAttribute(key, value)}`);
     }
   }
   return parts.length > 0 ? ` [${parts.join(", ")}]` : "";

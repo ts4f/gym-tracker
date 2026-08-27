@@ -1,6 +1,7 @@
 import { AttrValue, Exercise, Unit, Weight, WorkoutSet } from "../model/types";
 import { parseWeightToken } from "../model/weight";
 import { ParseError, ParseResult } from "./types";
+import { parseAttribute } from "./registry";
 
 export interface ParseOptions {
   defaultUnit: Unit;
@@ -94,7 +95,9 @@ function parseSetLine(line: string, defaultUnit: Unit): WorkoutSet | Error {
   let attributes: Map<string, AttrValue> | undefined;
   const attrMatch = /\[([^\]]*)\]/.exec(core);
   if (attrMatch !== null) {
-    attributes = parseAttributes(attrMatch[1] ?? "");
+    const parsedAttrs = parseAttributes(attrMatch[1] ?? "");
+    if (parsedAttrs.error) return new Error(parsedAttrs.error);
+    attributes = parsedAttrs.attributes;
     core = (
       core.slice(0, attrMatch.index) +
       core.slice((attrMatch.index ?? 0) + attrMatch[0].length)
@@ -203,17 +206,26 @@ function parseSetLine(line: string, defaultUnit: Unit): WorkoutSet | Error {
  * keys stay strings; a bare key becomes boolean `true`. US3 replaces this with
  * registry-typed parsing for `tempo`/`rest`/`rir`.
  */
-function parseAttributes(attrStr: string): Map<string, AttrValue> {
-  const map = new Map<string, AttrValue>();
+function parseAttributes(attrStr: string): {
+  attributes: Map<string, AttrValue>;
+  error?: string;
+} {
+  const attributes = new Map<string, AttrValue>();
   for (const part of attrStr.split(",")) {
     const trimmed = part.trim();
     if (trimmed.length === 0) continue;
     const m = /^(\S+)(?:\s+(.+))?$/.exec(trimmed);
     if (m === null) continue;
     const key = m[1] ?? "";
-    const value = m[2]?.trim();
+    const raw = m[2]?.trim();
     if (key.length === 0) continue;
-    map.set(key, value === undefined ? true : value);
+    if (raw === undefined) {
+      attributes.set(key, true);
+    } else {
+      const result = parseAttribute(key, raw);
+      if (result.error) return { attributes, error: result.error };
+      attributes.set(key, result.value);
+    }
   }
-  return map;
+  return { attributes };
 }

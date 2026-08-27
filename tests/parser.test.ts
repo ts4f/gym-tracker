@@ -157,7 +157,7 @@ describe("parseWorkoutBlock — units", () => {
 });
 
 describe("parseWorkoutBlock — attributes", () => {
-  it("stores bracket attributes as raw key/value strings", () => {
+  it("stores typed bracket attributes", () => {
     const r = parseWorkoutBlock(
       "Bench\n  100kg x 5 x 3 @ 8 [tempo 3-1-3, rest 90s]",
       opts,
@@ -165,7 +165,7 @@ describe("parseWorkoutBlock — attributes", () => {
     expect(r.errors).toEqual([]);
     const attrs = nn(nn(nn(r.workout.exercises[0]).sets[0]).attributes);
     expect(attrs.get("tempo")).toBe("3-1-3");
-    expect(attrs.get("rest")).toBe("90s");
+    expect(attrs.get("rest")).toBe(90);
   });
 
   it("treats a bare attribute as boolean true", () => {
