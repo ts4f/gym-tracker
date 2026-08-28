@@ -1,10 +1,9 @@
 <!--
 Sync Impact Report
 ===================
-Version change: (none — scaffold only) → 1.0.0 (initial ratification)
-Modified principles: none (all new)
-Added sections: Core Principles (5), Technology & Constraints, Development
-  Workflow & Quality Gates, Governance
+Version change: 1.0.0 → 1.1.0 (workflow: Spec-Kit file storage → beads-native)
+Modified principles: none
+Added sections: none
 Removed sections: none
 Deferred TODOs: none
 -->
@@ -74,8 +73,12 @@ other component MAY maintain a competing cache of workout data.
 
 - `npm run build` (typecheck + esbuild production bundle), `npm test` (Vitest),
   and `npm run lint` (ESLint) MUST all pass before a change is complete.
-- Feature work follows the Spec Kit workflow (specify → plan → tasks →
-  implement) with artifacts under `.specify/`.
+- Feature work is tracked in beads (`bd`): one `epic` per feature carrying
+  `## Success Criteria` and a `--spec-id` link; one child (type `feature`) per
+  user story carrying `## Acceptance Criteria` and its task checklist in
+  `notes`; execution order via `bd dep`. Reference design documents
+  (`data-model.md`, `contracts/`, `quickstart.md`, `research.md`) live under
+  `specs/<feature>/`.
 - Obsidian release conventions MUST be honored: keep `manifest.json` (version,
   minAppVersion, description) and `versions.json` consistent.
 
@@ -89,7 +92,7 @@ material expansion; PATCH: wording or clarification).
 Compliance review: every change MUST verify that (a) pure logic is unit-tested,
 (b) no new runtime dependency is introduced without justification, and (c) no
 feature regresses plain-text data ownership. For runtime development guidance
-and current feature context, consult `README.md` and the Spec Kit artifacts
-under `.specify/`.
+and current feature context, consult `README.md`, the architecture
+documentation under `docs/`, and the beads backlog (`bd prime`, `bd show`).
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-23 | **Last Amended**: 2026-08-23
+**Version**: 1.1.0 | **Ratified**: 2026-08-23 | **Last Amended**: 2026-08-28
