@@ -1,8 +1,9 @@
-# Gym Tracker — Architecture (as-is)
+# Gym Tracker — Architecture (v2)
 
-Lean arc42 documentation of the **current** (pre-DSL-v2) system. This is a baseline
-snapshot that records how the plugin works today; it is the reference against which
-the extensible-DSL redesign is judged.
+Lean arc42 documentation of the **current** system after the extensible-DSL v2
+redesign (plugin version `0.2.0`). The grammar is weight-first
+(`100kg x 5 x 3 @ 8`), the parser is a hand-written tokenizer plus a typed
+attribute registry, and the model carries an extensible per-set attribute bag.
 
 ---
 
@@ -48,6 +49,29 @@ The system is a single Obsidian plugin. Its runtime context is the Obsidian vaul
 
 There are no external systems, no network calls, no persistence beyond the vault and the plugin's own `data.json` (settings).
 
+### DSL (v2, weight-first)
+
+```text
+set-line := weight-spec "x" reps ["x" sets] ["@" rpe] [attributes] [inline-comment]
+weight-spec := weight | "BW" ["+" weight]
+reps := NUMBER ["+"] | NUMBER ("," NUMBER)+
+attributes := "[" attribute ("," attribute)* "]"
+```
+
+| Line | Meaning |
+|---|---|
+| `100kg x 5 x 3 @ 8` | 100 kg × 5 reps × 3 sets, RPE 8 |
+| `100kg x 5` | 100 kg × 5 reps, one set |
+| `100kg x 5+ x 3 @ 9` | three sets of 5, last set AMRAP, RPE 9 |
+| `100kg x 5,3,1 @ 9.5` | explicit per-set reps 5/3/1 |
+| `BW x 8 x 3` | bodyweight × 8 × 3 |
+| `BW+10kg x 5 x 3 @ 7` | weighted bodyweight +10 kg |
+| `100kg x 5 x 3 @ 8 [tempo 3-1-3, rest 90s]` | + tempo and rest attributes |
+
+`@` denotes RPE (1–10), a trailing `+` on a rep count sets an AMRAP flag,
+`BW`/`BW+<weight>` denote bodyweight/weighted-bodyweight, and `[...]` holds
+optional key/value attributes. The v1 grammar (`3x5 @ 100kg`) is no longer parsed.
+
 ---
 
 ## 4. Building Block View
@@ -59,15 +83,16 @@ glue modules (main, views, settings tab, block processor) use the Obsidian API.
 
 | File | Responsibility |
 |---|---|
-| `parser.ts` | `parseWorkoutBlock(source, opts)` — turns DSL text into the model via a **single regex** (`SET_RE`). Emits per-line `ParseError`. |
-| `types.ts` | `ParseError`, `ParsedBlock`, `ParseResult`. |
-| `serialize.ts` | `exercisesToDsl(exercises)` — inverse of parsing (used by "new workout from last workout"). Units always explicit. |
+| `core.ts` | `parseWorkoutBlock(source, opts)` — hand-written line tokenizer for the weight-first grammar. Order: attributes → inline comment → `@` RPE → `weight x reps [x sets]` → weight (`BW`/`BW+`/unit weight) → reps (single / AMRAP `+` / comma list) → sets. Emits per-line `ParseError`. |
+| `registry.ts` | `AttrParser` (`parse`/`format`), `registerAttribute`, `parseAttribute`, `formatAttribute` — the typed attribute extension point. Built-ins: `tempo`, `rest`, `rir`. Unknown keys pass through as raw strings. |
+| `types.ts` | `ParseError { line, message }`, `ParsedBlock`, `ParseResult { workout, errors }`. |
+| `serialize.ts` | `exercisesToDsl(exercises)` — inverse of parsing (used by "new workout from last workout"). Units always explicit; round-trips the v2 model. |
 
 ### `src/model/`
 
 | File | Responsibility |
 |---|---|
-| `types.ts` | Domain types: `Unit`, `Weight`, `WorkoutSet`, `Exercise`, `Workout`. |
+| `types.ts` | Domain types: `Unit`, `AttrValue` (`number \| string \| boolean`), `Weight`, `WorkoutSet`, `Exercise`, `Workout`. `WorkoutSet` carries `reps[]`, `weight?`, `isBodyweight`, `bodyweightAddon?`, `amrap?`, `rpe?`, `attributes?` (extensible `Map<string, AttrValue>`), `comment?`, `line`. |
 | `weight.ts` | `toKg`, `toLb`, `format`, `parseWeightToken` — unit conversion and formatting (kg-normalized). |
 
 ### `src/index/`
@@ -83,7 +108,7 @@ glue modules (main, views, settings tab, block processor) use the Obsidian API.
 
 | File | Responsibility |
 |---|---|
-| `blockProcessor.ts` | `registerBlockProcessor` (via `registerMarkdownCodeBlockProcessor("workout", …)`), `formatWeight`, `buildSetRows`, `fuzzyWarning`, `lastSessionLabel` — reading-view table rendering and the "last: …" / "did you mean" labels. |
+| `blockProcessor.ts` | `registerBlockProcessor` (via `registerMarkdownCodeBlockProcessor("workout", …)`), `formatWeight`, `buildSetRows`, `fuzzyWarning`, `lastSessionLabel` — reading-view table rendering (set/reps/weight + RPE/attributes column) and the "last: …" / "did you mean" labels. |
 
 ### `src/stats/`
 
@@ -91,14 +116,14 @@ glue modules (main, views, settings tab, block processor) use the Obsidian API.
 |---|---|
 | `history.ts` | `computeExerciseHistory`, `lastSessionBefore`, `formatSessionSummary` — per-session history per exercise. |
 | `oneRepMax.ts` | `estimateOneRepMax` — Epley formula on kg-normalized weight. |
-| `pr.ts` | Personal-record computation (heaviest weight × reps per exercise). |
-| `volume.ts` | Weekly volume per exercise (current ISO week). |
+| `pr.ts` | `computePersonalRecords` — heaviest weight × reps per exercise. |
+| `volume.ts` | `computeWeeklyVolume` — weekly volume per exercise (current ISO week). |
 
 ### `src/autocomplete/`
 
 | File | Responsibility |
 |---|---|
-| `exerciseSuggest.ts` | `ExerciseSuggest` — editor suggestions from exercise history, pre-filling last weight. |
+| `exerciseSuggest.ts` | `ExerciseSuggest` — editor suggestions from exercise history, pre-filling last weight (weight-first). |
 | `fenceContext.ts` | Detects when the cursor is inside a ```workout block. |
 | `insertionHelpers.ts` | Insert/edit helpers for the suggestion flow. |
 
@@ -123,11 +148,12 @@ keeps the index in sync with vault create/modify/delete/rename events (debounced
 
 ```text
 main.ts ──► parser ──► model ──► weight
-         ──► index (workoutLoader → blockExtractor + parser; fileScanner)
-         ──► render/blockProcessor ──► parser, stats/history, index
-         ──► autocomplete ──► index
-         ──► views/statsView ──► index, stats/*
-         ──► settings
+               └─► registry (attribute extension point)
+          ──► index (workoutLoader → blockExtractor + parser; fileScanner)
+          ──► render/blockProcessor ──► parser, stats/history, index
+          ──► autocomplete ──► index
+          ──► views/statsView ──► index, stats/*
+          ──► settings
 ```
 
 The pure core is `parser` + `model` + `stats` + `util`; everything else is glue over the
@@ -150,7 +176,7 @@ scanWorkoutFolder(vault, folder)
       → parseFilename(file.name)            (date + optional title)
       → vault.cachedRead(file)              (note content)
       → extractWorkoutBlocks(content)       (fenced ```workout blocks)
-      → parseWorkoutBlock(block, {defaultUnit})  (DSL → Exercise[])
+      → parseWorkoutBlock(block, {defaultUnit})  (weight-first DSL → Exercise[])
   → index.setAll(workouts)
 ```
 
@@ -164,13 +190,13 @@ scanWorkoutFolder(vault, folder)
 ### Reading view
 
 Each ```workout block is handed to the markdown code block processor, which parses it and
-renders one table per exercise, with per-set rows (set number, reps, weight, note), a
-"last: …" label, and an optional "did you mean …" fuzzy warning.
+renders one table per exercise, with per-set rows (set number, reps, weight, RPE,
+attributes, note), a "last: …" label, and an optional "did you mean …" fuzzy warning.
 
 ### Autocomplete
 
 The editor suggest queries `ExerciseIndex.lookup(prefix)`, sorted by frequency, and
-pre-fills the last weight.
+pre-fills the last weight in weight-first form.
 
 ### Stats sidebar
 
@@ -183,10 +209,12 @@ render PRs, weekly volume, and the 1RM leaderboard.
 
 - **ADR-1 — Fenced `workout` code block + Markdown code block processor.** Rendering is a derived view; the source stays plain, portable Markdown. *(constitution I)*
 - **ADR-2 — Filename-as-date.** Workout date (and optional title) comes from the note filename, not frontmatter.
-- **ADR-3 — Single `SET_RE` regex.** The whole set grammar is one regular expression in `parser.ts`. Simple and fast, but not extensible (see Risks).
-- **ADR-4 — Pure-logic core.** Parser, weight conversion, and stats are pure functions with no Obsidian imports. *(constitution II)*
-- **ADR-5 — Kilograms internally.** All weight math normalizes to kg via a single conversion constant. *(constitution III)*
-- **ADR-6 — Single derived `ExerciseIndex`.** One in-memory index is the sole derived view of the vault, kept in sync with vault events (debounced). *(constitution V)*
+- **ADR-3 — Hand-written tokenizer + typed attribute registry.** The v1 single `SET_RE` regex is replaced by a small line tokenizer (`parser/core.ts`) for the fixed `weight × reps × sets @ rpe` core, plus a registry (`parser/registry.ts`) that types `[key value]` attributes. Adding a new attribute is one `registerAttribute` call with no core/model change. *(constitution II, FR-008)*
+- **ADR-4 — Weight-first notation (RTS convention).** `100kg x 5 x 3 @ 8` reads naturally mid-workout; `@` means RPE, `+` means AMRAP, `BW`/`BW+10kg` mean bodyweight/weighted. Replaces the overloaded `3x5 @ 100kg` v1 syntax.
+- **ADR-5 — Clean breaking change, no migration.** Pre-publication (v0.1.0 → v0.2.0), so v1 syntax is removed wholesale with no migration tool.
+- **ADR-6 — Pure-logic core.** Parser, weight conversion, and stats are pure functions with no Obsidian imports. *(constitution II)*
+- **ADR-7 — Kilograms internally.** All weight math normalizes to kg via a single conversion constant. *(constitution III)*
+- **ADR-8 — Single derived `ExerciseIndex`.** One in-memory index is the sole derived view of the vault, kept in sync with vault events (debounced). *(constitution V)*
 
 ---
 
@@ -196,16 +224,17 @@ render PRs, weekly volume, and the 1RM leaderboard.
 - All pure modules have a mirroring Vitest file under `tests/`, developed test-first.
 - `npm run build` (typecheck + esbuild), `npm test` (Vitest), `npm run lint` (ESLint) must all pass.
 - Pure functions are deterministic (same input → same output).
+- No v1-grammar code paths or tests remain (v2-only).
 
 ---
 
 ## 8. Risks and Technical Debt
 
-| Risk / Debt | Consequence | Mitigation (v2 direction) |
+| Risk / Debt | Consequence | Mitigation / direction |
 |---|---|---|
-| **Monolithic `SET_RE` regex** | Adding RPE / AMRAP / tempo / rest means editing the regex and threading fields through model + consumers. No extension point. | Split parser into a small core tokenizer + a typed attribute registry. |
-| **Rigid, flat `WorkoutSet` model** | No generic place for new per-set attributes. | Add an extensible `attributes` map. |
-| **`+` overloaded** | `+` means "bodyweight addon" (`@ +10kg`); a future AMRAP marker would collide. | Redesign the core notation. |
-| **Two rep notations** | `3x5` (uniform) vs `5,3,1` (per-set) — two ways to express the same thing. | Unify in the redesign. |
-| **Indentation-sensitive parsing** | A leading tab/space changes line meaning; fragile to editor whitespace. | Retain but make explicit; document clearly. |
-| **No RPE / tempo / rest / RIR / AMRAP / supersets** | Common training data cannot be recorded. | The extensible-DSL redesign's core motivation. |
+| **Indentation-sensitive parsing** | A leading tab/space decides whether a line is an exercise or a set; fragile to editor whitespace. | Retained framing; documented explicitly. |
+| **Unknown-attribute typos pass silently** | `[tempoo 3-1-3]` is stored as a raw string with no error, because unknown keys are forward-compatible by design. | Accepted trade-off; a "known-key" fuzzy warning is a possible follow-up. |
+| **No v1 migration** | Existing `3x5 @ 100kg` notes are not parsed; users recreate them in v2. | Accepted — pre-publication, single user. |
+| **RPE vs RIR overlap** | `@n` (core RPE) and `rir` (attribute) both model proximity to failure; users may conflate them. | Document the distinction; keep RPE as the core field. |
+| **Supersets out of scope** | No way to group exercises into supersets yet. | Future extension via the attribute registry, not a core change. |
+| **In-memory index is derived state** | A missed vault event could desync the index until the next rebuild. | Debounced rebuild + full rebuild on layout-ready. |
