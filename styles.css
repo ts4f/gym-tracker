@@ -42,6 +42,13 @@
   font-weight: 400;
 }
 
+.gym-tracker-trend {
+  color: var(--text-muted);
+  margin-left: 0.5em;
+  font-size: 0.85em;
+  font-weight: 400;
+}
+
 .gym-tracker-fuzzy-warning {
   color: var(--text-warning);
   margin-left: 0.5em;

@@ -2,8 +2,8 @@
 
 An [Obsidian](https://obsidian.md) plugin for logging workouts as plain text in your notes.
 You write simple workout blocks; the plugin turns them into rendered tables, personal
-records, 1RM estimates, weekly volume, and exercise-name autocomplete. Your training log
-stays in markdown files you own — no app, no account, no export lock-in.
+records, 1RM estimates, progression trends, weekly volume, and exercise-name autocomplete.
+Your training log stays in markdown files you own — no app, no account, no export lock-in.
 
 ## How it works
 
@@ -61,7 +61,9 @@ Unknown attributes pass through as text, so the format grows without a plugin up
 
 - **Rendered tables** — in reading view, each workout block becomes a table per exercise
   with columns for set, reps, weight, RPE, and note/attributes, plus a
-  `last: 102.5kg × 5 (2026-06-04)` label showing your previous session.
+  `last: 102.5kg × 5 (2026-06-04)` label showing your previous session and a
+  `trend: ↑ +2.5kg/mo` progression rate from a linear regression over your
+  estimated-1RM history.
 - **Autocomplete** — start typing an exercise name inside a workout block and get
   suggestions from your history, pre-filling your last weight in weight-first form.
 - **Typo guard** — `Bnch Press` gets a "Did you mean *Bench Press*?" warning instead of
@@ -83,6 +85,7 @@ Unknown attributes pass through as text, so the format grows without a plugin up
 | Workouts folder | `Workouts` | Folder scanned for workout notes |
 | Default weight unit | `kg` | Unit assumed when a weight has no suffix |
 | Fuzzy-match warnings | on | Warn about likely exercise-name typos |
+| Progression trend | on | Show a linear-regression trend (e.g. `+2.5kg/mo`) next to each exercise in reading view |
 
 ## Installation
 
@@ -101,7 +104,6 @@ Parser / DSL work
 - More typed attributes — extend the registry (`registerAttribute`) with e.g. tempo variants.
 
 Stats / algorithms
-- Progression trend — simple linear regression over a lift's estimated 1RM history, showing e.g. "+2.5kg/month" in the stats view.
 - Training streaks and frequency — current streak, sessions per week over time.
 - Multiple 1RM formulas — current Epley; add Brzycki and a settings dropdown?
 

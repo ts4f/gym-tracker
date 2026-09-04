@@ -60,5 +60,19 @@ export class GymTrackerSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           }),
       );
+
+    new Setting(containerEl)
+      .setName("Progression trend")
+      .setDesc(
+        "Show a linear-regression trend (e.g. +2.5kg/mo) next to each exercise in reading view.",
+      )
+      .addToggle((t) =>
+        t
+          .setValue(this.plugin.settings.showTrend)
+          .onChange(async (value) => {
+            this.plugin.settings.showTrend = value;
+            await this.plugin.saveSettings();
+          }),
+      );
   }
 }

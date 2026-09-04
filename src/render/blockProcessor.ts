@@ -5,6 +5,7 @@ import { parseWorkoutBlock } from "../parser/core";
 import { formatAttribute } from "../parser/registry";
 import { GymTrackerSettings } from "../settings/settings";
 import { formatSessionSummary, lastSessionBefore } from "../stats/history";
+import { computeProgressionTrend, formatProgressionTrend } from "../stats/trend";
 import { parseFilename } from "../util/filenameDate";
 
 export interface SetRow {
@@ -67,6 +68,20 @@ export function lastSessionLabel(
   return `last: ${formatSessionSummary(entry)}`;
 }
 
+/**
+ * "trend: ↑ +2.5kg/mo" label — a linear-regression slope over the exercise's
+ * estimated 1RM history, or null when there is not enough history to fit a
+ * line (fewer than three est-1RM sessions, or all sessions on one date).
+ */
+export function trendLabel(
+  index: Pick<ExerciseIndex, "allWorkouts">,
+  exerciseName: string,
+): string | null {
+  const trend = computeProgressionTrend(index.allWorkouts(), exerciseName);
+  if (trend === null) return null;
+  return `trend: ${formatProgressionTrend(trend)}`;
+}
+
 export function buildSetRows(sets: WorkoutSet[]): SetRow[] {
   const rows: SetRow[] = [];
   let setNum = 0;
@@ -123,6 +138,13 @@ export function registerBlockProcessor(
       const last = lastSessionLabel(index, ctx.sourcePath, exercise.name);
       if (last !== null) {
         h4.createSpan({ cls: "gym-tracker-last-session", text: last });
+      }
+
+      if (settings.showTrend) {
+        const trend = trendLabel(index, exercise.name);
+        if (trend !== null) {
+          h4.createSpan({ cls: "gym-tracker-trend", text: trend });
+        }
       }
 
       const table = wrapper.createEl("table");

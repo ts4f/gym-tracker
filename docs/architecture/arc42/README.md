@@ -117,6 +117,7 @@ glue modules (main, views, settings tab, block processor) use the Obsidian API.
 | `history.ts` | `computeExerciseHistory`, `lastSessionBefore`, `formatSessionSummary` — per-session history per exercise. |
 | `oneRepMax.ts` | `estimateOneRepMax` — Epley formula on kg-normalized weight. |
 | `pr.ts` | `computePersonalRecords` — heaviest weight × reps per exercise. |
+| `trend.ts` | `computeProgressionTrend`, `formatProgressionTrend` — least-squares slope of est. 1RM over time (kg/month), for the reading-view `trend: …` label. |
 | `volume.ts` | `computeWeeklyVolume` — weekly volume per exercise (current ISO week). |
 
 ### `src/autocomplete/`
@@ -150,7 +151,7 @@ keeps the index in sync with vault create/modify/delete/rename events (debounced
 main.ts ──► parser ──► model ──► weight
                └─► registry (attribute extension point)
           ──► index (workoutLoader → blockExtractor + parser; fileScanner)
-          ──► render/blockProcessor ──► parser, stats/history, index
+          ──► render/blockProcessor ──► parser, stats/history, stats/trend, index
           ──► autocomplete ──► index
           ──► views/statsView ──► index, stats/*
           ──► settings
@@ -191,7 +192,8 @@ scanWorkoutFolder(vault, folder)
 
 Each ```workout block is handed to the markdown code block processor, which parses it and
 renders one table per exercise, with per-set rows (set number, reps, weight, RPE,
-attributes, note), a "last: …" label, and an optional "did you mean …" fuzzy warning.
+attributes, note), a "last: …" label, an optional "trend: …" progression label (linear
+regression over the est. 1RM history), and an optional "did you mean …" fuzzy warning.
 
 ### Autocomplete
 

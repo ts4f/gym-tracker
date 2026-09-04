@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSetRows, formatWeight, fuzzyWarning, lastSessionLabel } from "../src/render/blockProcessor";
+import { buildSetRows, formatWeight, fuzzyWarning, lastSessionLabel, trendLabel } from "../src/render/blockProcessor";
 import { AttrValue, WorkoutSet, Workout } from "../src/model/types";
 import { ExerciseIndex } from "../src/index/exerciseIndex";
 
@@ -187,5 +187,49 @@ describe("lastSessionLabel", () => {
 
   it("returns null when the note filename has no parseable date", () => {
     expect(lastSessionLabel(makeIndex(), "Workouts/scratch.md", "Squat")).toBeNull();
+  });
+});
+
+describe("trendLabel", () => {
+  function workoutWithSet(file: string, dateStr: string, name: string, weightKg: number): Workout {
+    return {
+      file,
+      date: new Date(`${dateStr}T00:00:00Z`),
+      exercises: [
+        {
+          name,
+          sets: [weightSet([1], weightKg)],
+          comments: [],
+        },
+      ],
+    };
+  }
+
+  function makeIndex(): ExerciseIndex {
+    const idx = new ExerciseIndex();
+    idx.setAll([
+      workoutWithSet("Workouts/2026-06-01.md", "2026-06-01", "Squat", 100),
+      workoutWithSet("Workouts/2026-06-11.md", "2026-06-11", "Squat", 110),
+      workoutWithSet("Workouts/2026-06-21.md", "2026-06-21", "Squat", 120),
+    ]);
+    return idx;
+  }
+
+  it("labels a positive trend from the exercise history", () => {
+    // +10 kg over 20 days → 1 kg/day → 30.44 kg/month → rounds to 30.4
+    expect(trendLabel(makeIndex(), "Squat")).toBe("trend: ↑ +30.4kg/mo");
+  });
+
+  it("returns null when history is insufficient", () => {
+    const idx = new ExerciseIndex();
+    idx.setAll([
+      workoutWithSet("Workouts/2026-06-01.md", "2026-06-01", "Squat", 100),
+      workoutWithSet("Workouts/2026-06-11.md", "2026-06-11", "Squat", 110),
+    ]);
+    expect(trendLabel(idx, "Squat")).toBeNull();
+  });
+
+  it("returns null for an unknown exercise", () => {
+    expect(trendLabel(makeIndex(), "Deadlift")).toBeNull();
   });
 });
